@@ -36,6 +36,9 @@ def get_min_order(symbol: str):
 def test():
     return {"status": "test"}
 
+@app.head("/")
+def head_root():
+    return Response(status_code=200)
 
 @app.get("/min_order")
 async def min_order(symbol: str = Query(..., description="Trading pair symbol, e.g. BTCUSDT")):
@@ -85,23 +88,27 @@ async def webhook(request: Request):
         logger.info(f"Рассчитанное количество: {qty} {symbol.split('USDT')[0]} по цене {last_price} USDT")
 
         if action == "buy":
+            logger.info(f"Отправка ордера: side={action.upper()}, qty={qty}, usdt_amount={usdt_amount}, price={last_price}")
             order = session.place_order(
                 category="spot",
                 symbol=symbol,
                 side="Buy",
                 order_type="Market",
-                qty=usdt_amount
+                qty=qty,
+                marketUnit="baseCoin"
             )
             logger.info(f"Ордер на покупку отправлен: {order}")
             return {"status": "Buy order sent", "order": order}
 
         elif action == "sell":
+            logger.info(f"Отправка ордера: side={action.upper()}, qty={qty}, usdt_amount={usdt_amount}, price={last_price}")
             order = session.place_order(
                 category="spot",
                 symbol=symbol,
                 side="Sell",
                 order_type="Market",
-                qty=qty
+                qty=qty,
+                marketUnit="baseCoin"
             )
             logger.info(f"Ордер на продажу отправлен: {order}")
             return {"status": "Sell order sent", "order": order}
