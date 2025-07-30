@@ -38,7 +38,7 @@ def test():
 
 @app.head("/")
 def head_root():
-    return Response(status_code=200)
+    pass
 
 @app.get("/min_order")
 async def min_order(symbol: str = Query(..., description="Trading pair symbol, e.g. BTCUSDT")):
