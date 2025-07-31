@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, HTTPException, Query
 from pybit.unified_trading import HTTP
 from loguru import logger
 import os
+from decimal import Decimal, ROUND_DOWN
 
 
 API_KEY = os.environ.get("API_KEY")
@@ -30,6 +31,18 @@ def get_min_order(symbol: str):
 
     min_notional = float(instruments[0]["lotSizeFilter"]["minOrderAmt"])
     return min_notional
+
+
+def get_precision(symbol: str):
+    info = session.get_instruments_info(category="spot", symbol=symbol)
+    instruments = info.get("result", {}).get("list", [])
+
+    if not instruments:
+        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not found in spot market.")
+
+    precision_str = instruments[0]["lotSizeFilter"]["basePrecision"]
+    precision = abs(Decimal(precision_str).as_tuple().exponent)  # например, 6 -> значит 6 знаков
+    return precision
 
 
 @app.get("/")
@@ -84,7 +97,9 @@ async def webhook(request: Request):
             logger.warning(f"Переданная сумма {usdt_amount} USDT меньше минимальной {min_notional} USDT")
             return {"status": "Сумма меньше минимально допустимой", "min_order_amount": min_notional}
 
-        qty = round(usdt_amount / last_price, 6)
+        precision = get_precision(symbol)
+        qty = float(Decimal(usdt_amount / last_price).quantize(Decimal(f"1e-{precision}"), rounding=ROUND_DOWN))
+#        qty = round(usdt_amount / last_price, 6)
         logger.info(f"Рассчитанное количество: {qty} {symbol.split('USDT')[0]} по цене {last_price} USDT")
 
         if action == "buy":
