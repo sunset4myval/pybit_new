@@ -99,7 +99,7 @@ async def webhook(request: Request):
 
 #        precision = get_precision(symbol)
 #        qty = float(Decimal(usdt_amount / last_price).quantize(Decimal(f"1e-{precision}"), rounding=ROUND_DOWN))
-#        qty = round(usdt_amount / last_price, 6)
+        qty = round(usdt_amount / last_price, 6)
         logger.info(f"Рассчитанное количество: {qty} {symbol.split('USDT')[0]} по цене {last_price} USDT")
 
         if action == "buy":
