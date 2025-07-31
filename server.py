@@ -33,16 +33,16 @@ def get_min_order(symbol: str):
     return min_notional
 
 
-def get_precision(symbol: str):
-    info = session.get_instruments_info(category="spot", symbol=symbol)
-    instruments = info.get("result", {}).get("list", [])
+#def get_precision(symbol: str):
+#    info = session.get_instruments_info(category="spot", symbol=symbol)
+#    instruments = info.get("result", {}).get("list", [])
 
-    if not instruments:
-        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not found in spot market.")
+#    if not instruments:
+#        raise HTTPException(status_code=404, detail=f"Symbol {symbol} not found in spot market.")
 
-    precision_str = instruments[0]["lotSizeFilter"]["basePrecision"]
-    precision = abs(Decimal(precision_str).as_tuple().exponent)  # например, 6 -> значит 6 знаков
-    return precision
+#    precision_str = instruments[0]["lotSizeFilter"]["basePrecision"]
+#    precision = abs(Decimal(precision_str).as_tuple().exponent)  # например, 6 -> значит 6 знаков
+#    return precision
 
 
 @app.get("/")
@@ -97,33 +97,33 @@ async def webhook(request: Request):
             logger.warning(f"Переданная сумма {usdt_amount} USDT меньше минимальной {min_notional} USDT")
             return {"status": "Сумма меньше минимально допустимой", "min_order_amount": min_notional}
 
-        precision = get_precision(symbol)
-        qty = float(Decimal(usdt_amount / last_price).quantize(Decimal(f"1e-{precision}"), rounding=ROUND_DOWN))
+#        precision = get_precision(symbol)
+#        qty = float(Decimal(usdt_amount / last_price).quantize(Decimal(f"1e-{precision}"), rounding=ROUND_DOWN))
 #        qty = round(usdt_amount / last_price, 6)
         logger.info(f"Рассчитанное количество: {qty} {symbol.split('USDT')[0]} по цене {last_price} USDT")
 
         if action == "buy":
-            logger.info(f"Отправка ордера: side={action.upper()}, qty={qty}, usdt_amount={usdt_amount}, price={last_price}")
+            logger.info(f"Отправка ордера: side={action.upper()}, qty={usdt_amount}, usdt_amount={usdt_amount}, price={last_price}")
             order = session.place_order(
                 category="spot",
                 symbol=symbol,
                 side="Buy",
                 order_type="Market",
-                qty=qty,
-                marketUnit="baseCoin"
+                qty=usdt_amount,
+                marketUnit="quoteCoin"
             )
             logger.info(f"Ордер на покупку отправлен: {order}")
             return {"status": "Buy order sent", "order": order}
 
         elif action == "sell":
-            logger.info(f"Отправка ордера: side={action.upper()}, qty={qty}, usdt_amount={usdt_amount}, price={last_price}")
+            logger.info(f"Отправка ордера: side={action.upper()}, qty={usdt_amount}, usdt_amount={usdt_amount}, price={last_price}")
             order = session.place_order(
                 category="spot",
                 symbol=symbol,
                 side="Sell",
                 order_type="Market",
-                qty=qty,
-                marketUnit="baseCoin"
+                qty=usdt_amount,
+                marketUnit="quoteCoin"
             )
             logger.info(f"Ордер на продажу отправлен: {order}")
             return {"status": "Sell order sent", "order": order}
